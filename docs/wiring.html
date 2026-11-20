@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Energy Meter Wiring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one technical sheet - live wiring diagram on top, pin table + numbered procedure below, fault table last. */
+:root {
+  --bg: #f2f4f3; --surface: #ffffff; --fg: #18211d; --muted: #5a6762; --line: #cfd8d4; --accent: #0d7f62;
+  --esp: #1f3d34; --esp-fg: #dfeee8; --mod: #1c4c86; --mod-fg: #e3edf9; --meter: #eceeed; --meter-edge: #9aa5a1;
+  --w-3v3: #d1392a; --w-gnd: #2a302e; --w-tx: #2a68d4; --w-rx: #c2840a; --w-a: #e0741b; --w-b: #7a5330;
+  --led-off: #3a4a44; --warn: #b3261e; --lcd: #c9d9a8; --lcd-fg: #23301a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121715; --surface: #1a211e; --fg: #e3ebe7; --muted: #94a39d; --line: #2e3a35; --accent: #3cc49a;
+  --esp: #24493e; --esp-fg: #dfeee8; --mod: #23558f; --mod-fg: #e3edf9; --meter: #252c29; --meter-edge: #5c6964;
+  --w-3v3: #ef5a49; --w-gnd: #a3aeaa; --w-tx: #5b92f0; --w-rx: #e5a92e; --w-a: #f08d3a; --w-b: #c4935f;
+  --led-off: #34413c; --warn: #ef6b62; --lcd: #4c5c34; --lcd-fg: #e4f0c8; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121715; --surface: #1a211e; --fg: #e3ebe7; --muted: #94a39d; --line: #2e3a35; --accent: #3cc49a;
+  --esp: #24493e; --esp-fg: #dfeee8; --mod: #23558f; --mod-fg: #e3edf9; --meter: #252c29; --meter-edge: #5c6964;
+  --w-3v3: #ef5a49; --w-gnd: #a3aeaa; --w-tx: #5b92f0; --w-rx: #e5a92e; --w-a: #f08d3a; --w-b: #c4935f;
+  --led-off: #34413c; --warn: #ef6b62; --lcd: #4c5c34; --lcd-fg: #e4f0c8; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 36px; }
+h1, h2 { font-family: var(--f-display); font-weight: 700; letter-spacing: .01em; text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+h2 { font-size: 1.6rem; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--f-mono); font-size: .88em; }
+header { display: grid; gap: 12px; }
+.eyebrow { font-family: var(--f-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--f-mono); font-size: .82rem; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.chip b { color: var(--accent); font-weight: 600; }
+
+/* diagram */
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.scroll { overflow-x: auto; }
+svg.wiring { display: block; width: 100%; min-width: 760px; height: auto; }
+.stagebar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.status { font-family: var(--f-mono); font-size: .85rem; color: var(--muted); min-height: 1.4em; }
+.status b { color: var(--fg); font-weight: 600; }
+button { font: 600 .9rem var(--f-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .85rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 18px; height: 4px; border-radius: 2px; display: inline-block; }
+
+/* svg parts */
+.wire { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.w-3v3 { stroke: var(--w-3v3); } .w-gnd { stroke: var(--w-gnd); } .w-tx { stroke: var(--w-tx); }
+.w-rx { stroke: var(--w-rx); } .w-a { stroke: var(--w-a); } .w-b { stroke: var(--w-b); }
+.bus-on .w-a, .bus-on .w-b { filter: drop-shadow(0 0 4px var(--w-a)); }
+.esp { fill: var(--esp); } .mod { fill: var(--mod); } .meter { fill: var(--meter); stroke: var(--meter-edge); stroke-width: 2; }
+.pad { fill: #c9a24a; } .pad-dim { fill: #7f744f; opacity: .55; }
+.t-board { fill: var(--esp-fg); font: 600 13px var(--f-mono); }
+.t-mod { fill: var(--mod-fg); font: 600 13px var(--f-mono); }
+.t-title { fill: var(--fg); font: 700 20px var(--f-display); letter-spacing: .02em; }
+.t-label { fill: var(--fg); font: 600 13px var(--f-mono); }
+.t-note { fill: var(--muted); font: 500 12.5px var(--f-body); }
+.t-wire { font: 600 12px var(--f-mono); }
+.term { fill: var(--surface); stroke: var(--meter-edge); stroke-width: 2; }
+.term-dim { fill: var(--meter); stroke: var(--meter-edge); stroke-width: 1.5; opacity: .6; }
+.screw { fill: var(--meter-edge); }
+.led { fill: var(--led-off); transition: fill .08s; }
+.led.on-rx { fill: #ff4a3d; } .led.on-tx { fill: #39d353; }
+.lcd { fill: var(--lcd); } .t-lcd { fill: var(--lcd-fg); font: 600 22px var(--f-mono); }
+.hatch { fill: url(#hatch); }
+.packet { stroke: var(--surface); stroke-width: 2; }
+.bytes { font: 600 12px var(--f-mono); }
+.joint { fill: var(--fg); }
+
+/* sections */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
+@media (max-width: 820px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+section { display: grid; gap: 14px; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .74rem var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+td.mono { white-space: nowrap; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: s; }
+ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 4px 12px; }
+ol.steps > li::before { content: counter(s); grid-row: span 2; font: 700 1.5rem var(--f-display); color: var(--accent); line-height: 1.2; }
+ol.steps h3 { margin: 0; font: 600 1.05rem var(--f-body); }
+ol.steps p { color: var(--muted); }
+.warn { color: var(--warn); font-weight: 600; }
+.cmd { display: flex; gap: 8px; align-items: stretch; margin-top: 6px; min-width: 0; }
+.cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: .8rem/1.5 var(--f-mono); }
+.cmd button { flex: none; font-size: .8rem; padding: 4px 10px; }
+footer { color: var(--muted); font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { .led { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">modbus-matter-meter · breadboard build</div>
+    <h1>Wiring the F&amp;F LE-03MW meter to an ESP32-C6</h1>
+    <p>This is the wiring that actually works: a nanoESP32-C6, an auto-direction RS485-TTL module and the meter in the distribution board. The animation shows one read cycle, which the firmware repeats every 2 s.</p>
+    <div class="chips" aria-label="Meter communication settings">
+      <span class="chip">address <b>1</b></span>
+      <span class="chip"><b>9600</b> Bd</span>
+      <span class="chip"><b>8E1</b></span>
+      <span class="chip">function <b>FC03</b></span>
+      <span class="chip">float <b>ABCD</b></span>
+      <span class="chip">terminals <b>21 = A</b>, <b>20 = B</b></span>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="stagebar">
+      <div class="status" id="status" aria-live="polite">Idle.</div>
+      <button type="button" id="toggle" aria-pressed="true">Pause</button>
+    </div>
+    <div class="scroll">
+    <svg class="wiring" id="svg" viewBox="0 0 1000 540" role="img" aria-labelledby="svgtitle">
+      <title id="svgtitle">Diagram: GPIO19 to module TX, GPIO23 to module RX, 3V3 to VCC, GND to GND; module terminal A to meter terminal 21, B to terminal 20, 120 ohm resistor between 20 and 21.</title>
+      <defs>
+        <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="var(--meter)"/>
+          <line x1="0" y1="0" x2="0" y2="8" stroke="var(--warn)" stroke-width="3" opacity=".45"/>
+        </pattern>
+      </defs>
+
+      <!-- ESP32-C6 devkit -->
+      <text class="t-title" x="80" y="98">nanoESP32-C6</text>
+      <rect class="esp" x="80" y="110" width="180" height="330" rx="10"/>
+      <rect x="135" y="170" width="70" height="80" rx="4" fill="#0e1714" opacity=".75"/>
+      <text class="t-board" x="170" y="215" text-anchor="middle">C6</text>
+      <g id="padsL"></g><g id="padsR"></g>
+      <text class="t-board" x="108" y="165">3V3</text>
+      <text class="t-board" x="232" y="265" text-anchor="end">23</text>
+      <text class="t-board" x="232" y="345" text-anchor="end">19</text>
+      <text class="t-board" x="232" y="405" text-anchor="end">GND</text>
+      <rect x="140" y="428" width="60" height="24" rx="6" fill="#b9c2bf"/>
+      <text class="t-note" x="170" y="476" text-anchor="middle">USB-C "CH343" → 5 V</text>
+      <text class="t-note" x="170" y="494" text-anchor="middle">(computer to flash, then any USB)</text>
+
+      <!-- wires ESP -> module -->
+      <path class="wire w-3v3" d="M95,160 H50 V80 H400 V230 H430"/>
+      <path class="wire w-rx" id="w23" d="M245,260 H360 V264 A6,6 0 0 1 360,276 V310 H430"/>
+      <path class="wire w-tx" id="w19" d="M245,340 H330 V270 H430"/>
+      <path class="wire w-gnd" d="M245,400 H380 V350 H430"/>
+      <text class="t-wire" x="300" y="72" fill="var(--w-3v3)">3V3 (not 5 V)</text>
+
+      <!-- RS485 module -->
+      <text class="t-title" x="430" y="188">RS485-TTL module</text>
+      <rect class="mod" x="430" y="200" width="170" height="180" rx="8"/>
+      <text class="t-mod" x="442" y="234">VCC</text>
+      <text class="t-mod" x="442" y="274">TX</text>
+      <text class="t-mod" x="442" y="314">RX</text>
+      <text class="t-mod" x="442" y="354">GND</text>
+      <rect x="500" y="290" width="62" height="40" rx="3" fill="#0f2747" opacity=".8"/>
+      <text class="t-mod" x="531" y="315" text-anchor="middle" style="font-size:11px">485</text>
+      <circle class="led" id="ledRx" cx="520" cy="230" r="7"/><text class="t-mod" x="533" y="235" style="font-size:11px">RX</text>
+      <circle class="led" id="ledTx" cx="520" cy="258" r="7"/><text class="t-mod" x="533" y="263" style="font-size:11px">TX</text>
+      <rect x="600" y="240" width="32" height="100" rx="4" fill="#2f8f4e"/>
+      <circle class="screw" cx="616" cy="260" r="8"/><circle class="screw" cx="616" cy="320" r="8"/>
+      <text class="t-label" x="642" y="252">A+</text>
+      <text class="t-label" x="642" y="345">B−</text>
+      <text class="t-note" x="430" y="404">Pins are labelled from the MCU side:</text>
+      <text class="t-note" x="430" y="421">module TX = connect the ESP TX here.</text>
+
+      <!-- bus to meter -->
+      <g id="bus">
+        <path class="wire w-a" d="M624,260 H870 V388"/>
+        <path class="wire w-b" d="M624,320 H660 V500 H920 V412"/>
+      </g>
+      <text class="t-wire" x="700" y="252" fill="var(--w-a)">A</text>
+      <text class="t-wire" x="700" y="492" fill="var(--w-b)">B</text>
+      <text class="t-note" x="676" y="530">twisted pair, e.g. one pair of a UTP cable</text>
+
+      <!-- meter -->
+      <text class="t-title" x="740" y="38">F&amp;F LE-03MW</text>
+      <rect class="meter" x="740" y="50" width="240" height="410" rx="10"/>
+      <rect class="hatch" x="752" y="62" width="216" height="58" rx="4"/>
+      <g id="mains"></g>
+      <text class="t-note" x="860" y="138" text-anchor="middle" style="fill:var(--warn);font-weight:600">230 V · switch the breaker off first</text>
+      <rect class="lcd" x="770" y="160" width="180" height="62" rx="4"/>
+      <text class="t-lcd" id="lcd" x="860" y="200" text-anchor="middle">0.294 kW</text>
+      <text class="t-note" x="860" y="246" text-anchor="middle">3×230/400 V · 5(80) A · class 1</text>
+      <circle class="term-dim" cx="770" cy="400" r="12"/><circle class="term-dim" cx="820" cy="400" r="12"/>
+      <circle class="term" cx="870" cy="400" r="12"/><circle class="term" cx="920" cy="400" r="12"/>
+      <text class="t-label" x="770" y="374" text-anchor="middle" opacity=".55">24</text>
+      <text class="t-label" x="820" y="374" text-anchor="middle" opacity=".55">23</text>
+      <text class="t-label" x="870" y="374" text-anchor="middle">21</text>
+      <text class="t-label" x="920" y="374" text-anchor="middle">20</text>
+      <text class="t-note" x="795" y="352" text-anchor="middle">pulse (leave free)</text>
+      <!-- 120R between 21 and 20 -->
+      <path fill="none" stroke="var(--fg)" stroke-width="2" d="M870,412 V432 H878 l4,-7 l6,14 l6,-14 l6,14 l6,-14 l4,7 H920"/>
+      <circle class="joint" cx="920" cy="432" r="3.5"/>
+      <text class="t-note" x="895" y="456" text-anchor="middle">120 Ω here only</text>
+
+      <!-- invisible motion paths -->
+      <path id="pReq" d="M245,340 H330 V270 H430 H520 L600,260 H870 V388" fill="none" stroke="none"/>
+      <path id="pResp" d="M870,388 V260 H600 L520,300 L430,310 H360 V260 H245" fill="none" stroke="none"/>
+      <circle class="packet" id="dot" r="9" cx="-50" cy="-50" fill="var(--w-tx)"/>
+      <text class="bytes" id="bytes" x="-200" y="-200"></text>
+    </svg>
+    </div>
+    <div class="legend" aria-label="Wire colours">
+      <span><i style="background:var(--w-tx)"></i>GPIO19 → module TX (request)</span>
+      <span><i style="background:var(--w-rx)"></i>module RX → GPIO23 (reply)</span>
+      <span><i style="background:var(--w-3v3)"></i>3V3</span>
+      <span><i style="background:var(--w-gnd)"></i>GND</span>
+      <span><i style="background:var(--w-a)"></i>RS-485 A</span>
+      <span><i style="background:var(--w-b)"></i>RS-485 B</span>
+    </div>
+  </div>
+
+  <div class="cols">
+    <section>
+      <h2>Pins</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>ESP32-C6</th><th>Goes to</th><th>Header pin</th></tr></thead>
+          <tbody>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-3v3)"></span>3V3</td><td>module VCC</td><td class="mono">J1-2</td></tr>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-gnd)"></span>GND</td><td>module GND</td><td class="mono">J6-14 / J1-1</td></tr>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-tx)"></span>GPIO19</td><td>module <b>TX</b></td><td class="mono">J6-11</td></tr>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-rx)"></span>GPIO23</td><td>module <b>RX</b></td><td class="mono">J6-7</td></tr>
+            <tr><td class="mono">GPIO4</td><td>not connected (DE for the MAX3485 on the carrier board)</td><td class="mono">J1-4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Module</th><th>Meter</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-a)"></span>A+</td><td class="mono">terminal 21</td><td>A</td></tr>
+            <tr><td class="mono"><span class="sw" style="background:var(--w-b)"></span>B−</td><td class="mono">terminal 20</td><td>B</td></tr>
+            <tr><td class="mono">—</td><td class="mono">23 / 24</td><td>pulse output, leave free</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="t-small" style="color:var(--muted);font-size:.88rem">J1/J6 positions come from the carrier board design. When wiring, go by the silkscreen on the devkit (3V3, G, 19, 23).</p>
+    </section>
+
+    <section>
+      <h2>How to</h2>
+      <ol class="steps">
+        <li><h3>Switch the breaker off</h3><p>The meter's RS-485 terminals are low voltage, but the L1–L3 phases sit right next to them. <span class="warn">Keep the breaker off while working in the distribution board.</span></p></li>
+        <li><h3>Power the module</h3><p>Module VCC to <code>3V3</code>, GND to GND. Not 5 V, or the module would drive 5 V logic into the ESP.</p></li>
+        <li><h3>Data lines</h3><p><code>GPIO19 → TX</code> and <code>GPIO23 → RX</code> on the module. The module labels its pins from the MCU side, which is why it looks swapped. The module's RX LED blinks on every request from the ESP.</p></li>
+        <li><h3>Bus to the meter</h3><p><code>A+ → 21</code>, <code>B− → 20</code> over a twisted pair. Put the 120 Ω terminator at the meter end only; the module usually already has one (SMD marked "121").</p></li>
+        <li><h3>Flash the firmware</h3><p>Through the USB-C port marked CH343. Use <code>erase-flash</code> the first time, then only <code>flash</code> so the Home Assistant pairing survives.</p>
+          <div class="cmd"><pre id="c1">cd firmware &amp;&amp; idf.py -p /dev/cu.usbmodem… flash monitor</pre><button type="button" data-copy="c1">Copy</button></div></li>
+        <li><h3>Check the log</h3><p>After boot you should see <code>=&gt; using 9600 baud 8E1, FC03, word order ABCD</code>, then a <code>P … kW  U …/…/… V</code> line every 2 s.</p></li>
+        <li><h3>Pair with Home Assistant</h3><p>Turn on <em>Enable test-net DCL usage</em> in the Matter Server add-on. The phone must be on the same network as the Thread border router (ZBT-2). Code: <code>34970112332</code>.</p>
+          <div class="cmd"><pre id="c2">34970112332</pre><button type="button" data-copy="c2">Copy</button></div></li>
+        <li><h3>Permanent power</h3><p>Any USB supply, for example a router's USB port. The pairing is stored in NVS, so after a power cut the ESP rejoins Thread and Home Assistant on its own.</p></li>
+      </ol>
+    </section>
+  </div>
+
+  <section>
+    <h2>Troubleshooting</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>timeout, 0 byte(s) received</code>, only the RX LED blinks</td><td>The ESP transmits but nothing comes back</td><td>Swap wires 19 ↔ 23 on the ESP.</td></tr>
+          <tr><td>Still 0 bytes after that</td><td>A and B swapped</td><td>Swap A ↔ B. It does no harm.</td></tr>
+          <tr><td>Bytes arrive but "no answer"</td><td>Different baud rate or parity</td><td>Check <code>Id</code> and <code>bd</code> on the meter display.</td></tr>
+          <tr><td>Pairing ends with "unable to add" after the device joins Thread</td><td>Phone on a VLAN with no route to the Thread network</td><td>Put the phone on the network where Home Assistant and the ZBT-2 are.</td></tr>
+          <tr><td>Home Assistant aborts at the very end of pairing</td><td>Test certificate (vendor 0xFFF1)</td><td>Turn on <em>Enable test-net DCL usage</em> in Matter Server.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Verified on a breadboard on 20 Nov 2026. The MAX3485 carrier board has not been manufactured yet.</footer>
+</div>
+
+<script>
+(() => {
+  // header pads on the devkit (15 per side, only the used ones bright)
+  const svgNS = "http://www.w3.org/2000/svg";
+  const addPads = (gid, x, used) => {
+    const g = document.getElementById(gid);
+    for (let i = 0; i < 15; i++) {
+      const c = document.createElementNS(svgNS, "circle");
+      c.setAttribute("cx", x); c.setAttribute("cy", 140 + i * 20); c.setAttribute("r", 5);
+      c.setAttribute("class", used.includes(i + 1) ? "pad" : "pad-dim");
+      g.appendChild(c);
+    }
+  };
+  addPads("padsL", 95, [2]);          // J1-2 = 3V3
+  addPads("padsR", 245, [7, 11, 14]); // J6-7 = 23, J6-11 = 19, J6-14 = GND
+  const mains = document.getElementById("mains");
+  ["1", "3", "5", "7"].forEach((n, i) => {
+    const c = document.createElementNS(svgNS, "circle");
+    c.setAttribute("cx", 785 + i * 50); c.setAttribute("cy", 91); c.setAttribute("r", 11);
+    c.setAttribute("class", "term-dim"); mains.appendChild(c);
+    const t = document.createElementNS(svgNS, "text");
+    t.setAttribute("x", 785 + i * 50); t.setAttribute("y", 96); t.setAttribute("text-anchor", "middle");
+    t.setAttribute("class", "t-label"); t.textContent = ["L1", "L2", "L3", "N"][i]; mains.appendChild(t);
+  });
+
+  const $ = id => document.getElementById(id);
+  const dot = $("dot"), bytes = $("bytes"), status = $("status"), ledRx = $("ledRx"), ledTx = $("ledTx");
+  const bus = $("bus"), lcd = $("lcd"), btn = $("toggle");
+  const pReq = $("pReq"), pResp = $("pResp");
+  const Lreq = pReq.getTotalLength(), Lresp = pResp.getTotalLength();
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  // one poll cycle, time-compressed: request 1.6 s, meter turnaround 0.3 s, reply 1.6 s, idle 1.2 s
+  const T_REQ = 1600, T_GAP = 300, T_RESP = 1600, T_IDLE = 1200, CYCLE = T_REQ + T_GAP + T_RESP + T_IDLE;
+  const powers = [0.294, 0.296, 0.293, 0.429, 0.376, 0.297];
+  let k = 0, t0 = null, running = !matchMedia("(prefers-reduced-motion: reduce)").matches, last = -1;
+
+  const place = (path, L, f) => { const p = path.getPointAtLength(L * f); dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y); return p; };
+  const setPhase = (ph) => {
+    if (ph === last) return; last = ph;
+    const msg = [
+      "<b>Request</b> · ESP → meter: <span class='mono'>01 03 00 0E 00 16 …</span> (22 registers from 0x000E)",
+      "<b>Meter</b> processes the request",
+      "<b>Reply</b> · meter → ESP: <span class='mono'>01 03 2C 43 72 …</span> (voltages, currents, powers as FLOAT)",
+      "<b>Wait</b> for the next read (2 s in real life); changes above the threshold go to Home Assistant over Thread",
+    ][ph];
+    status.innerHTML = msg;
+  };
+
+  function frame(ts) {
+    if (!running) { t0 = null; return; }
+    if (t0 === null) t0 = ts - (window.__tPaused || 0);
+    const t = (ts - t0) % CYCLE;
+    window.__tPaused = t;
+    if (t < T_REQ) {
+      const f = t / T_REQ, p = place(pReq, Lreq, f);
+      dot.setAttribute("fill", css("--w-tx"));
+      bytes.setAttribute("x", p.x + 12); bytes.setAttribute("y", p.y - 12); bytes.setAttribute("fill", css("--w-tx"));
+      bytes.textContent = "01 03 00 0E";
+      ledRx.classList.toggle("on-rx", f > 0.28 && f < 0.5);
+      ledTx.classList.remove("on-tx");
+      bus.classList.toggle("bus-on", f > 0.42);
+      setPhase(0);
+    } else if (t < T_REQ + T_GAP) {
+      dot.setAttribute("cx", -50); bytes.textContent = ""; ledRx.classList.remove("on-rx"); bus.classList.remove("bus-on");
+      setPhase(1);
+    } else if (t < T_REQ + T_GAP + T_RESP) {
+      const f = (t - T_REQ - T_GAP) / T_RESP, p = place(pResp, Lresp, f);
+      dot.setAttribute("fill", css("--w-rx"));
+      bytes.setAttribute("x", p.x + 12); bytes.setAttribute("y", p.y - 12); bytes.setAttribute("fill", css("--w-rx"));
+      bytes.textContent = "01 03 2C …";
+      bus.classList.toggle("bus-on", f < 0.55);
+      ledTx.classList.toggle("on-tx", f > 0.5 && f < 0.72);
+      setPhase(2);
+    } else {
+      dot.setAttribute("cx", -50); bytes.textContent = ""; ledTx.classList.remove("on-tx"); bus.classList.remove("bus-on");
+      if (last !== 3) { k = (k + 1) % powers.length; lcd.textContent = powers[k].toFixed(3) + " kW"; }
+      setPhase(3);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  const setBtn = () => { btn.textContent = running ? "Pause" : "Play animation"; btn.setAttribute("aria-pressed", String(running)); };
+  btn.addEventListener("click", () => { running = !running; setBtn(); if (running) requestAnimationFrame(frame); else status.textContent = "Animation paused."; });
+  setBtn();
+  if (running) requestAnimationFrame(frame); else status.textContent = "Animation is off because your system asks for reduced motion. Use the button to play it.";
+
+  document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+    const el = $(b.dataset.copy), text = el.textContent;
+    const done = () => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  }));
+})();
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@ Home Assistant Connect ZBT-2): totals and per-phase values show up as normal HA 
 in the Energy dashboard. No cloud, no Wi-Fi.
 
 - `firmware/`: ESP-IDF + esp-matter application
+- `docs/wiring.html`: animated wiring diagram and step-by-step how-to for the breadboard build (download and open it in a browser)
 - KiCad carrier board for a MuseLab nanoESP32-C6 (`rs485-meter.kicad_*`, `fab/`, `scripts/`). **The board has not been
   manufactured or tested yet**; the firmware was verified on a breadboard with an RS485-TTL module.
 
