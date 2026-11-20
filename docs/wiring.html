@@ -102,6 +102,8 @@ ol.steps p { color: var(--muted); }
 .cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: .8rem/1.5 var(--f-mono); }
 .cmd button { flex: none; font-size: .8rem; padding: 4px 10px; }
 footer { color: var(--muted); font-size: .85rem; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .led { transition: none; } }
 </style>
 </head>
@@ -109,7 +111,7 @@ footer { color: var(--muted); font-size: .85rem; }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">modbus-matter-meter · breadboard build</div>
+    <div class="eyebrow"><a href="https://github.com/serusko/modbus-matter-meter">modbus-matter-meter on GitHub</a> · breadboard build</div>
     <h1>Wiring the F&amp;F LE-03MW meter to an ESP32-C6</h1>
     <p>This is the wiring that actually works: a nanoESP32-C6, an auto-direction RS485-TTL module and the meter in the distribution board. The animation shows one read cycle, which the firmware repeats every 2 s.</p>
     <div class="chips" aria-label="Meter communication settings">
@@ -284,7 +286,7 @@ footer { color: var(--muted); font-size: .85rem; }
     </div>
   </section>
 
-  <footer>Verified on a breadboard on 20 Nov 2026. The MAX3485 carrier board has not been manufactured yet.</footer>
+  <footer>Verified on a breadboard on 20 Nov 2026. The MAX3485 carrier board has not been manufactured yet. Firmware, board files and README: <a href="https://github.com/serusko/modbus-matter-meter">github.com/serusko/modbus-matter-meter</a>.</footer>
 </div>
 
 <script>
