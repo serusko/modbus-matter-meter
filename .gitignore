@@ -1,0 +1,17 @@
+.DS_Store
+
+# KiCad local state and backups
+*.kicad_prl
+*-backups/
+fp-info-cache
+.mcp-backups/
+
+# ESP-IDF build output (also in firmware/.gitignore)
+firmware/build/
+firmware/managed_components/
+firmware/sdkconfig
+firmware/sdkconfig.old
+
+# Per-device Matter factory data (passcode, verifier, certificates) - never commit
+firmware/factory/
+*.factory.bin
