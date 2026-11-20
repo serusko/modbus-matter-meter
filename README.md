@@ -7,8 +7,6 @@ in the Energy dashboard. No cloud, no Wi-Fi.
 
 - `firmware/`: ESP-IDF + esp-matter application
 - [`docs/wiring.html`](https://serusko.github.io/modbus-matter-meter/docs/wiring.html): animated wiring diagram and step-by-step how-to for the breadboard build
-- KiCad carrier board for a MuseLab nanoESP32-C6 (`rs485-meter.kicad_*`, `fab/`, `scripts/`). **The board has not been
-  manufactured or tested yet**; the firmware was verified on a breadboard with an RS485-TTL module.
 
 ## Matter data model
 
@@ -36,7 +34,7 @@ idf.py -p <port> flash monitor      # nanoESP32-C6: use the CH343 USB-C port
 
 Reflash with `flash`, not `erase-flash`, to keep the Matter pairing (fabrics live in NVS).
 
-Pins (UART1, matches the carrier board): TX = GPIO19, RX = GPIO23, DE/RE = GPIO4 (unused with auto-direction modules).
+Pins (UART1): TX = GPIO19, RX = GPIO23, DE/RE = GPIO4 (unused with auto-direction modules).
 Meter settings are auto-detected at boot (9600/4800/2400/1200 baud x 8E1/8E2/8N1 x FC03/FC04 x word order).
 
 ### Commissioning
@@ -58,53 +56,16 @@ Meter settings are auto-detected at boot (9600/4800/2400/1200 baud x 8E1/8E2/8N1
   whole data model (~14 kB every poll over Thread).
 - If the meter is replaced by one with a lower counter, the new readings are rejected as implausible until the ESP reboots.
 
-# Hardware: RS-485 Modbus meter reader – nanoESP32-C6 carrier
+## Hardware
 
-2-layer, 100 × 70 mm, 4× M3 (3.2 mm) in the corners. KiCad 10.
+Verified on a breadboard (20 Nov 2026):
 
-## GPIO map (nanoESP32-C6, MuseLab, 2×15 headers)
+- **ESP32-C6:** MuseLab nanoESP32-C6 (16 MB). Flash and power through the USB-C port marked CH343.
+- **RS485-TTL module** with automatic direction (VCC/TX/RX/GND), powered from **3V3**, not 5 V. Its pins are labelled
+  from the MCU side: **GPIO19 → module TX**, **GPIO23 → module RX**.
+- **F&F LE-03MW:** Modbus address 1, 9600 baud **8E1**, FC03, FLOAT word order ABCD; power registers in kW, energy in
+  kWh. 8E2 garbles the replies even though the manual lists "parity bits 2". Terminals **21 = A, 20 = B** (23/24 are the
+  pulse output). 120 Ω terminator at the meter end only.
 
-| Function | GPIO | Devkit pin |
-|---|---|---|
-| RS-485 RO (UART RX) | 23 | J6-7 |
-| RS-485 DI (UART TX) | 19 | J6-11 |
-| RS-485 DE + /RE (10k pull-down) | 4 | J1-4 |
-| SPI SCK / MOSI / MISO | 6 / 7 / 2 | J1-6 / J1-7 / J6-2 |
-| microSD CS | 5 | J1-5 |
-| LoRa NSS / DIO1 / RST / BUSY | 18 / 3 / 1 / 0 | J6-12 / J6-3 / J1-9 / J1-8 |
-| I2C SDA / SCL (4.7k pull-ups) | 21 / 22 | J6-9 / J6-8 |
-| Encoder A / B / switch | 20 / 10 / 11 | J6-10 / J1-11 / J1-12 |
-| Mode slide switch | 12 | J1-13 |
-
-Deviations from the original brief, all agreed during design:
-- RS-485 moved off GPIO16/17: those are UART0, wired to the devkit's CH343 USB-UART bridge.
-- LoRa NSS moved from GPIO8 to GPIO18: GPIO8 is a strapping pin and drives the on-board RGB LED.
-- Encoder A moved from GPIO9 to GPIO20: GPIO9 is the BOOT strapping pin.
-- GPIO12 (mode switch) is the native-USB D−. The devkit's second (native) USB-C port is not usable; program over the CH343 port.
-
-## Verified on the meter (breadboard, 2026-11-20)
-
-- F&F LE-03MW: Modbus address 1, 9600 baud **8E1**, FC03, FLOAT word order ABCD. Power registers are in kW, energy in kWh. 8E2 garbles the replies, even though the manual lists "parity bits 2".
-- Meter terminals: **21 = A, 20 = B** (23/24 are the pulse output). The 120 Ω terminator sits only at the meter end.
-- Auto-direction RS485-TTL module (VCC/TX/RX/GND): its pins are labelled from the MCU side. Connect **GPIO19 → module TX** and **GPIO23 → module RX**.
-- The carrier PCB is not affected: GPIO19 → MAX3485 DI and GPIO23 ← RO are correct as routed.
-
-## Things to know before ordering
-
-- **5 V back-feed:** the nanoESP32-C6 has only a fuse between USB VBUS and its 5V pin. With USB and the external 5 V terminal connected together, the terminal back-feeds the PC's USB port. Don't connect both at once, or add a diode/ideal-diode on the devkit side.
-- **LoRa socket J5 uses a generic pinout:** 3V3, MISO, DIO1, NSS, SCK, MOSI, BUSY, RST, GND, chosen for routing. Check it against your breakout, or wire an adapter. The module envelope is to the right of J5 (about 16.5 × 26 mm). Its antenna must end in the copper-free "ANT" area at the bottom edge.
-- **OLED socket J7 is GND-VCC-SCL-SDA.** Some 0.96" modules swap GND and VCC.
-- **Encoder A/B have no external pull-ups.** Enable the ESP32 internal pull-ups.
-- **CR2032 (BT1) sits under the devkit's USB end.** It is low enough to fit under the USB plug. Replacing it means unplugging the devkit.
-- **Copper layers:** signals were autorouted with Freerouting 2.5.0 after the power, RS-485 and GND vias were routed by hand. About 36 % of track length is on B.Cu, so the bottom GND plane has some slots. The top layer also carries a GND pour. Both antenna areas are keepouts on both layers.
-- **RS-485 A/B pair** runs together from U1 through the SM712 (D1). It splits only at the 5.08 mm terminal.
-- **DRC:** 0 errors, 0 unconnected, schematic parity OK. The 3 remaining warnings are terminal-block silkscreen that reaches past the board edge. The min track width is set to 0.15 mm because Freerouting necks a few traces down to 0.187 mm at pads.
-
-## 3D
-`fab/3d/`: STEP/GLB of the carrier and renders with the modules plugged in (`assembled-*.png`). The nanoESP32-C6, OLED, LoRa breakout and EC11 models are simplified VRML stand-ins from `scripts/models3d.py` (`3d/`). They appear in KiCad's 3D viewer and renders but not in the STEP, which only takes STEP models.
-
-## Outputs (`fab/`)
-Gerbers + drill (`rs485-meter-gerbers.zip`), BOM, pick-and-place, schematic PDF, top/bottom renders, DRC/ERC reports.
-
-## Regenerating the layout (`scripts/`, KiCad's bundled Python)
-`place.py` → `attach3d.py` → `clear.py` → `preroute.py` → autoroute (Freerouting, GND excluded) → `pour.py` → `finish.py` → `silk_clear.py` → `silk.py`
+With a bare MAX3485 instead of an auto-direction module, drive DE/RE from GPIO4 (the firmware already sets it as the
+UART RTS pin).

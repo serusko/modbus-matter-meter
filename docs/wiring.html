@@ -236,7 +236,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
             <tr><td class="mono"><span class="sw" style="background:var(--w-gnd)"></span>GND</td><td>module GND</td><td class="mono">J6-14 / J1-1</td></tr>
             <tr><td class="mono"><span class="sw" style="background:var(--w-tx)"></span>GPIO19</td><td>module <b>TX</b></td><td class="mono">J6-11</td></tr>
             <tr><td class="mono"><span class="sw" style="background:var(--w-rx)"></span>GPIO23</td><td>module <b>RX</b></td><td class="mono">J6-7</td></tr>
-            <tr><td class="mono">GPIO4</td><td>not connected (DE for the MAX3485 on the carrier board)</td><td class="mono">J1-4</td></tr>
+            <tr><td class="mono">GPIO4</td><td>not connected (DE/RE when using a bare MAX3485)</td><td class="mono">J1-4</td></tr>
           </tbody>
         </table>
       </div>
@@ -250,7 +250,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
           </tbody>
         </table>
       </div>
-      <p class="t-small" style="color:var(--muted);font-size:.88rem">J1/J6 positions come from the carrier board design. When wiring, go by the silkscreen on the devkit (3V3, G, 19, 23).</p>
+      <p class="t-small" style="color:var(--muted);font-size:.88rem">J1/J6 header positions are only a guide. When wiring, go by the silkscreen on the devkit (3V3, G, 19, 23).</p>
     </section>
 
     <section>
@@ -286,7 +286,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     </div>
   </section>
 
-  <footer>Verified on a breadboard on 20 Nov 2026. The MAX3485 carrier board has not been manufactured yet. Firmware, board files and README: <a href="https://github.com/serusko/modbus-matter-meter">github.com/serusko/modbus-matter-meter</a>.</footer>
+  <footer>Verified on a breadboard on 20 Nov 2026. Firmware, board files and README: <a href="https://github.com/serusko/modbus-matter-meter">github.com/serusko/modbus-matter-meter</a>.</footer>
 </div>
 
 <script>
