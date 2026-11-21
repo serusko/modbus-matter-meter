@@ -20,7 +20,16 @@ null only after 3 failed reads in a row. Cumulative energy is published only whe
 never faster than ~60 kW since the last report, first value confirmed by two reads), because Home Assistant treats a
 drop of a `total_increasing` sensor as a counter reset.
 
-## Firmware
+## Install (no toolchain)
+
+Open the [wiring and install page](https://serusko.github.io/modbus-matter-meter/docs/wiring.html) in Chrome or Edge,
+plug the ESP32-C6 in over USB and click **Install** (ESP Web Tools). The binaries come from the latest
+[GitHub Release](https://github.com/serusko/modbus-matter-meter/releases), built by CI from this repository.
+Tick *Erase device* only on the first install; updates without erasing keep the Matter pairing.
+
+Command line alternative: download the release files and run the command in `flash.txt`.
+
+## Building the firmware
 
 Tested with ESP-IDF v6.0.2 and esp-matter `main` (Nov 2026).
 

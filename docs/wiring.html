@@ -103,6 +103,9 @@ ol.steps p { color: var(--muted); }
 .cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: .8rem/1.5 var(--f-mono); }
 .cmd button { flex: none; font-size: .8rem; padding: 4px 10px; }
 footer { color: var(--muted); font-size: .85rem; }
+.install { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+.install-note { color: var(--muted); font-size: .88rem; }
+esp-web-install-button { --esp-tools-button-color: var(--accent); --esp-tools-button-text-color: var(--surface); --esp-tools-button-border-radius: 8px; }
 .pair { display: grid; gap: 12px; justify-items: start; margin-top: 6px; }
 .pair .cmd { margin-top: 0; width: 100%; }
 .qr { margin: 0; display: grid; gap: 4px; justify-items: center; }
@@ -266,9 +269,12 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         <li><h3>Power the module</h3><p>Module VCC to <code>3V3</code>, GND to GND. Not 5 V, or the module would drive 5 V logic into the ESP.</p></li>
         <li><h3>Data lines</h3><p><code>GPIO19 → TX</code> and <code>GPIO23 → RX</code> on the module. The module labels its pins from the MCU side, which is why it looks swapped. The module's RX LED blinks on every request from the ESP.</p></li>
         <li><h3>Bus to the meter</h3><p><code>A+ → 21</code>, <code>B− → 20</code> over a twisted pair. Put the 120 Ω terminator at the meter end only; the module usually already has one (SMD marked "121").</p></li>
-        <li><h3>Flash the firmware</h3><p>Through the USB-C port marked CH343. Use <code>erase-flash</code> the first time, then only <code>flash</code> so the Home Assistant pairing survives.</p>
-          <div class="cmd"><pre id="c1">cd firmware &amp;&amp; idf.py -p /dev/cu.usbmodem… flash monitor</pre><button type="button" data-copy="c1">Copy</button></div></li>
-        <li><h3>Check the log</h3><p>After boot you should see <code>=&gt; using 9600 baud 8E1, FC03, word order ABCD</code>, then a <code>P … kW  U …/…/… V</code> line every 2 s.</p></li>
+        <li><h3>Install the firmware</h3><p>Plug the ESP in through the USB-C port marked CH343 and click <b>Install</b>, then pick the serial port. Works in Chrome or Edge on a computer; nothing else to install (on Windows you may need the WCH CH343 driver). Tick <em>Erase device</em> only on the first install; later updates without erasing keep the Home Assistant pairing.</p>
+          <div class="install" id="install">
+            <esp-web-install-button id="installBtn" manifest="../firmware/manifest.json" hidden></esp-web-install-button>
+            <span class="install-note" id="installNote">Checking for a released firmware…</span>
+          </div></li>
+        <li><h3>Check the log</h3><p>In the install dialog choose <em>Logs &amp; Console</em> (or <code>idf.py monitor</code>). After boot you should see <code>=&gt; using 9600 baud 8E1, FC03, word order ABCD</code>, then a <code>P … kW  U …/…/… V</code> line every 2 s.</p></li>
         <li><h3>Pair with Home Assistant</h3><p>Turn on <em>Enable test-net DCL usage</em> in the Matter Server add-on. The phone must be on the same network as the Thread border router (ZBT-2). Scan the QR code in the Home Assistant app (<em>Add device → Matter</em>) or type the manual code.</p>
           <div class="pair">
             <div class="cmd"><pre id="c2">34970112332</pre><button type="button" data-copy="c2">Copy</button></div>
@@ -299,6 +305,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
 <script>
 (() => {
   // header pads on the devkit (15 per side, only the used ones bright)
@@ -391,6 +398,12 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     const q = qrcode(0, "M"); q.addData("MT:Y.K9042C00KA0648G00"); q.make();
     $("qr").insertAdjacentHTML("afterbegin", q.createSvgTag({ cellSize: 4, margin: 3, scalable: true }));
   }
+
+  // Web installer: show the button only once a release (manifest) is published on Pages.
+  fetch("../firmware/manifest.json", { cache: "no-store" })
+    .then(r => (r.ok ? r.json() : Promise.reject()))
+    .then(m => { $("installBtn").hidden = false; $("installNote").textContent = "Firmware " + m.version; })
+    .catch(() => { $("installNote").innerHTML = 'No release published yet. Build it yourself: see the <a href="https://github.com/serusko/modbus-matter-meter#building-the-firmware">README</a>.'; });
 
   document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
     const el = $(b.dataset.copy), text = el.textContent;

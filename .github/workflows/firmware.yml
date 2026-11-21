@@ -1,0 +1,86 @@
+name: Firmware
+
+# Builds the firmware in a clean container (no local paths in the binary).
+# Manual run: build only, binaries as a workflow artifact.
+# Tag v*: build, publish a GitHub Release, then redeploy the Pages site with the web installer.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  # esp-matter commit the firmware was developed and tested with
+  ESP_MATTER_REF: 2eb82707d6051eed4c6cc42e6b7d41888c635a41
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: espressif/idf:v6.0.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch esp-matter
+        shell: bash
+        run: |
+          git config --global --add safe.directory '*'
+          git clone --filter=blob:none https://github.com/espressif/esp-matter.git /opt/esp-matter
+          cd /opt/esp-matter
+          git checkout "$ESP_MATTER_REF"
+          git submodule update --init --depth 1
+          cd connectedhomeip/connectedhomeip
+          ./scripts/checkout_submodules.py --platform esp32 linux --shallow
+
+      - name: Install esp-matter
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          cd /opt/esp-matter
+          ./install.sh
+
+      - name: Build
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          . /opt/esp-matter/export.sh
+          cd firmware
+          idf.py set-target esp32c6
+          idf.py build
+
+      - name: Collect binaries
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp firmware/build/bootloader/bootloader.bin dist/bootloader.bin
+          cp firmware/build/partition_table/partition-table.bin dist/partition-table.bin
+          cp firmware/build/ota_data_initial.bin dist/ota_data_initial.bin
+          cp firmware/build/energy_meter.bin dist/modbus-matter-meter.bin
+          cat > dist/flash.txt <<'EOF'
+          esptool --chip esp32c6 write-flash 0x0 bootloader.bin 0xc000 partition-table.bin 0x1d000 ota_data_initial.bin 0x20000 modbus-matter-meter.bin
+          EOF
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: dist/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" \
+            --notes "Firmware for the nanoESP32-C6. Easiest install: https://serusko.github.io/modbus-matter-meter/docs/wiring.html (Chrome/Edge). CLI: see flash.txt."
+          gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main

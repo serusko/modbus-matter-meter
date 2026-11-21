@@ -1,0 +1,61 @@
+name: Pages
+
+# Publishes docs/ plus the latest release's firmware and an ESP Web Tools manifest.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _site/firmware
+          cp -r docs _site/docs
+          printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=docs/wiring.html"><a href="docs/wiring.html">Wiring and install guide</a>\n' > _site/index.html
+          if tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null); then
+            gh release download "$tag" --repo "$GITHUB_REPOSITORY" --dir _site/firmware --pattern '*.bin'
+            # Parts at their own offsets (not a merged image), so an update never overwrites NVS = the Matter pairing.
+            cat > _site/firmware/manifest.json <<EOF
+          {
+            "name": "modbus-matter-meter",
+            "version": "$tag",
+            "new_install_prompt_erase": true,
+            "builds": [{
+              "chipFamily": "ESP32-C6",
+              "parts": [
+                { "path": "bootloader.bin", "offset": 0 },
+                { "path": "partition-table.bin", "offset": 49152 },
+                { "path": "ota_data_initial.bin", "offset": 118784 },
+                { "path": "modbus-matter-meter.bin", "offset": 131072 }
+              ]
+            }]
+          }
+          EOF
+          else
+            echo "No release yet - web installer stays disabled."
+          fi
+          find _site -type f | sort
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deploy
+        uses: actions/deploy-pages@v4
