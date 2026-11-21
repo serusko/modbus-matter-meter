@@ -94,7 +94,8 @@ td.mono { white-space: nowrap; }
 .tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; counter-reset: s; }
 ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 4px 12px; }
-ol.steps > li::before { content: counter(s); grid-row: span 2; font: 700 1.5rem var(--f-display); color: var(--accent); line-height: 1.2; }
+ol.steps > li > * { grid-column: 2; }
+ol.steps > li::before { content: counter(s); grid-column: 1; grid-row: 1 / span 2; font: 700 1.5rem var(--f-display); color: var(--accent); line-height: 1.2; }
 ol.steps h3 { margin: 0; font: 600 1.05rem var(--f-body); }
 ol.steps p { color: var(--muted); }
 .warn { color: var(--warn); font-weight: 600; }
