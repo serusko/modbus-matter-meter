@@ -103,6 +103,11 @@ ol.steps p { color: var(--muted); }
 .cmd pre { margin: 0; flex: 1; min-width: 0; overflow-x: auto; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: .8rem/1.5 var(--f-mono); }
 .cmd button { flex: none; font-size: .8rem; padding: 4px 10px; }
 footer { color: var(--muted); font-size: .85rem; }
+.pair { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 6px; }
+.pair .cmd { margin-top: 0; flex: 1 1 160px; }
+.qr { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.qr svg { width: 132px; height: 132px; display: block; background: #fff; border-radius: 6px; } /* QR stays dark-on-white for scanners */
+.qr figcaption { font-size: .7rem; color: var(--muted); }
 a { color: var(--accent); text-underline-offset: 2px; }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .led { transition: none; } }
@@ -264,8 +269,11 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         <li><h3>Flash the firmware</h3><p>Through the USB-C port marked CH343. Use <code>erase-flash</code> the first time, then only <code>flash</code> so the Home Assistant pairing survives.</p>
           <div class="cmd"><pre id="c1">cd firmware &amp;&amp; idf.py -p /dev/cu.usbmodem… flash monitor</pre><button type="button" data-copy="c1">Copy</button></div></li>
         <li><h3>Check the log</h3><p>After boot you should see <code>=&gt; using 9600 baud 8E1, FC03, word order ABCD</code>, then a <code>P … kW  U …/…/… V</code> line every 2 s.</p></li>
-        <li><h3>Pair with Home Assistant</h3><p>Turn on <em>Enable test-net DCL usage</em> in the Matter Server add-on. The phone must be on the same network as the Thread border router (ZBT-2). Code: <code>34970112332</code>.</p>
-          <div class="cmd"><pre id="c2">34970112332</pre><button type="button" data-copy="c2">Copy</button></div></li>
+        <li><h3>Pair with Home Assistant</h3><p>Turn on <em>Enable test-net DCL usage</em> in the Matter Server add-on. The phone must be on the same network as the Thread border router (ZBT-2). Scan the QR code in the Home Assistant app (<em>Add device → Matter</em>) or type the manual code.</p>
+          <div class="pair">
+            <figure class="qr" id="qr" aria-label="Matter pairing QR code"><figcaption class="mono">MT:Y.K9042C00KA0648G00</figcaption></figure>
+            <div class="cmd"><pre id="c2">34970112332</pre><button type="button" data-copy="c2">Copy</button></div>
+          </div></li>
         <li><h3>Permanent power</h3><p>Any USB supply, for example a router's USB port. The pairing is stored in NVS, so after a power cut the ESP rejoins Thread and Home Assistant on its own.</p></li>
       </ol>
     </section>
@@ -290,6 +298,7 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   <footer>Verified on a breadboard on 20 Nov 2026. Firmware, board files and README: <a href="https://github.com/serusko/modbus-matter-meter">github.com/serusko/modbus-matter-meter</a>.</footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 (() => {
   // header pads on the devkit (15 per side, only the used ones bright)
@@ -376,6 +385,12 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   btn.addEventListener("click", () => { running = !running; setBtn(); if (running) requestAnimationFrame(frame); else status.textContent = "Animation paused."; });
   setBtn();
   if (running) requestAnimationFrame(frame); else status.textContent = "Animation is off because your system asks for reduced motion. Use the button to play it.";
+
+  // Matter onboarding QR (esp-matter test credentials: VID 0xFFF1, PID 0x8000, disc. 3840, passcode 20202021, BLE)
+  if (window.qrcode) {
+    const q = qrcode(0, "M"); q.addData("MT:Y.K9042C00KA0648G00"); q.make();
+    $("qr").insertAdjacentHTML("afterbegin", q.createSvgTag({ cellSize: 4, margin: 3, scalable: true }));
+  }
 
   document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
     const el = $(b.dataset.copy), text = el.textContent;

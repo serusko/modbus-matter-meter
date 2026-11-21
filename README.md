@@ -40,7 +40,8 @@ Meter settings are auto-detected at boot (9600/4800/2400/1200 baud x 8E1/8E2/8N1
 ### Commissioning
 
 - **Test credentials:** the firmware uses esp-matter's public development credentials (test DAC, vendor 0xFFF1,
-  passcode 20202021, discriminator 3840, manual pairing code `34970112332`). They are not secret and are the same on
+  passcode 20202021, discriminator 3840, manual pairing code `34970112332`, QR payload `MT:Y.K9042C00KA0648G00`; the
+  QR code is on the [wiring page](https://serusko.github.io/modbus-matter-meter/docs/wiring.html)). They are not secret and are the same on
   every development device; they only matter while the device is not commissioned. For a per-device passcode, generate
   a factory partition with `esp-matter-mfg-tool` (keep it out of git, see `.gitignore`).
 - **Home Assistant:** enable *"Enable test-net DCL usage"* in the Matter Server add-on, otherwise HA rejects the test
