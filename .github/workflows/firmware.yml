@@ -33,14 +33,12 @@ jobs:
       - name: Install esp-matter
         shell: bash
         run: |
-          # install.sh builds Python deps from source and Linux host tools (chip-cert etc.):
-          # standard connectedhomeip Linux build dependencies.
+          # Some Python deps (cffi) build from source and need the C toolchain + headers.
           apt-get update
-          apt-get install -y --no-install-recommends build-essential pkg-config libffi-dev libssl-dev python3-dev \
-            libdbus-1-dev libglib2.0-dev libavahi-client-dev libreadline-dev unzip
+          apt-get install -y --no-install-recommends build-essential pkg-config libffi-dev libssl-dev python3-dev
           . "$IDF_PATH/export.sh"
           cd /opt/esp-matter
-          ./install.sh
+          ./install.sh --no-host-tool   # chip-tool/chip-cert are not needed to build the firmware
 
       - name: Build
         shell: bash
