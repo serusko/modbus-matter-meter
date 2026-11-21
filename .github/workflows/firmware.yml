@@ -33,6 +33,9 @@ jobs:
       - name: Install esp-matter
         shell: bash
         run: |
+          # cffi and friends build from source here; they need the C toolchain and headers.
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential pkg-config libffi-dev libssl-dev python3-dev
           . "$IDF_PATH/export.sh"
           cd /opt/esp-matter
           ./install.sh
